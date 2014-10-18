@@ -53,7 +53,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.start\");"//
-                        + "chain.doStart();return;}"//
+                        + "if(chain!=null){chain.doStart();return;}}"//
                 );
         startMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -64,7 +64,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.create\");"//
-                        + "chain.doCreate($1);return;}"//
+                        + "if(chain!=null){chain.doCreate($1);return;}}"//
                 );
         createMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -75,7 +75,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.index\");"//
-                        + "chain.doIndex($1);return;}"//
+                        + "if(chain!=null){chain.doIndex($1);return;}}"//
                 );
         indexMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -86,7 +86,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.delete\");"//
-                        + "chain.doDelete($1);return;}"//
+                        + "if(chain!=null){chain.doDelete($1);return;}}"//
                 );
         deleteMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -103,7 +103,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + " chain="
                         + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.delete_by_query\");"//
-                        + "chain.doDelete($1);return;}"//
+                        + "if(chain!=null){chain.doDelete($1);return;}}"//
                 );
         deleteByQueryMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -114,7 +114,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.get\");"//
-                        + "return chain.doGet($1);}"//
+                        + "if(chain!=null){return chain.doGet($1);}}"//
                 );
         getMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -129,7 +129,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + " chain="
                         + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.acquire_searcher\");"//
-                        + "return chain.doAcquireSearcher($1);}"//
+                        + "if(chain!=null){return chain.doAcquireSearcher($1);}}"//
                 );
         acuireSearcherMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -143,7 +143,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + " chain="
                         + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.maybe_merge\");"//
-                        + "chain.doMaybeMerge();return;}"//
+                        + "if(chain!=null){chain.doMaybeMerge();return;}}"//
                 );
         maybeMergeMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -154,7 +154,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.refresh\");"//
-                        + "chain.doRefresh($1);return;}"//
+                        + "if(chain!=null){chain.doRefresh($1);return;}}"//
                 );
         refreshMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -165,7 +165,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.flush\");"//
-                        + "chain.doFlush($1);return;}"//
+                        + "if(chain!=null){chain.doFlush($1);return;}}"//
                 );
         flushMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -176,7 +176,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.optimize\");"//
-                        + "chain.doOptimize($1);return;}"//
+                        + "if(chain!=null){chain.doOptimize($1);return;}}"//
                 );
         optimizeMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -190,7 +190,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + " chain="
                         + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.snapshot_index\");"//
-                        + "return chain.doSnapshotIndex();}"//
+                        + "if(chain!=null){return chain.doSnapshotIndex();}}"//
                 );
         snapshotIndexMethod.insertAfter(engineChainClsName + ".end();", true);
 
@@ -203,7 +203,7 @@ public class ExtensionPlugin extends AbstractPlugin {
                         + ".begin()){"//
                         + engineChainClsName + " chain=" + engineChainClsName
                         + ".createEngineChain($0,\"engine.filter.recover\");"//
-                        + "chain.doRecover($1);return;}"//
+                        + "if(chain!=null){chain.doRecover($1);return;}}"//
                 );
         recoverMethod.insertAfter(engineChainClsName + ".end();", true);
 

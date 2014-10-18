@@ -33,6 +33,10 @@ public class EngineChain {
         this.filters = filters;
     }
 
+    public Engine getEngine() {
+        return engine;
+    }
+
     public void doStart() throws EngineException {
         if (position < filters.length) {
             EngineFilter filter = filters[position];
