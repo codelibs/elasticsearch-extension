@@ -3,13 +3,15 @@ Elasticsearch Extension Pugin
 
 ## Overview
 
-TBD
+This plugin extends Elasticsearch's features to modify them by your plugin.
+For example, this plugin has EngineFilter to insert your programe into InternalEngine.
 
 ## Version
 
-| Taste     | Elasticsearch |
+| Version   | Elasticsearch |
 |:---------:|:-------------:|
-| master    | 1.3.X         |
+| master    | 1.4.X         |
+| 1.4.0     | 1.4.0.Beta1   |
 
 ### Issues/Questions
 
@@ -18,14 +20,14 @@ Please file an [issue](https://github.com/codelibs/elasticsearch-extension/issue
 
 ## Installation
 
-### Install DynaRank Plugin
+### Install Extension Plugin
 
-TBD
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-extension/1.4.0
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-extension/1.3.0
+## Reference
 
-## Getting Started
+### EngineFilter
 
-### Create Sample Data
+[EngineFilter](https://github.com/codelibs/elasticsearch-extension/blob/master/src/main/java/org/codelibs/elasticsearch/extension/filter/EngineFilter.java "EngineFitler") is an interface to filter InternalEngine.
 
-TBD
+
