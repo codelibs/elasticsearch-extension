@@ -12,83 +12,78 @@ import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
 import org.elasticsearch.index.engine.Engine.Refresh;
-import org.elasticsearch.index.engine.Engine.Searcher;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 
 public abstract class BaseEngineFilter implements EngineFilter {
 
     @Override
-    public void doStart(EngineChain chain) throws EngineException {
+    public void doStart(final EngineChain chain) throws EngineException {
         chain.doStart();
     }
 
     @Override
-    public void doCreate(Create create, EngineChain chain)
+    public void doCreate(final Create create, final EngineChain chain)
             throws EngineException {
         chain.doCreate(create);
     }
 
     @Override
-    public void doIndex(Index index, EngineChain chain) throws EngineException {
+    public void doIndex(final Index index, final EngineChain chain)
+            throws EngineException {
         chain.doIndex(index);
     }
 
     @Override
-    public void doDelete(Delete delete, EngineChain chain)
+    public void doDelete(final Delete delete, final EngineChain chain)
             throws EngineException {
         chain.doDelete(delete);
     }
 
     @Override
-    public void doDelete(DeleteByQuery delete, EngineChain chain)
+    public void doDelete(final DeleteByQuery delete, final EngineChain chain)
             throws EngineException {
         chain.doDelete(delete);
     }
 
     @Override
-    public GetResult doGet(Get get, EngineChain chain) throws EngineException {
+    public GetResult doGet(final Get get, final EngineChain chain)
+            throws EngineException {
         return chain.doGet(get);
     }
 
     @Override
-    public Searcher doAcquireSearcher(String source, EngineChain chain)
-            throws EngineException {
-        return chain.doAcquireSearcher(source);
-    }
-
-    @Override
-    public void doMaybeMerge(EngineChain chain) throws EngineException {
+    public void doMaybeMerge(final EngineChain chain) throws EngineException {
         chain.doMaybeMerge();
     }
 
     @Override
-    public void doRefresh(Refresh refresh, EngineChain chain)
+    public void doRefresh(final Refresh refresh, final EngineChain chain)
             throws EngineException {
         chain.doRefresh(refresh);
     }
 
     @Override
-    public void doFlush(Flush flush, EngineChain chain) throws EngineException,
-            FlushNotAllowedEngineException {
+    public void doFlush(final Flush flush, final EngineChain chain)
+            throws EngineException, FlushNotAllowedEngineException {
         chain.doFlush(flush);
     }
 
     @Override
-    public void doOptimize(Optimize optimize, EngineChain chain)
+    public void doOptimize(final Optimize optimize, final EngineChain chain)
             throws EngineException {
         chain.doOptimize(optimize);
     }
 
     @Override
-    public SnapshotIndexCommit doSnapshotIndex(EngineChain chain)
+    public SnapshotIndexCommit doSnapshotIndex(final EngineChain chain)
             throws EngineException {
         return chain.doSnapshotIndex();
     }
 
     @Override
-    public void doRecover(RecoveryHandler recoveryHandler, EngineChain chain)
-            throws EngineException {
+    public void doRecover(final RecoveryHandler recoveryHandler,
+            final EngineChain chain) throws EngineException {
         chain.doRecover(recoveryHandler);
     }
 

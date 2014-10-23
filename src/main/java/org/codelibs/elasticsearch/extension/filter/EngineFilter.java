@@ -1,6 +1,7 @@
 package org.codelibs.elasticsearch.extension.filter;
 
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
@@ -12,11 +13,12 @@ import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
 import org.elasticsearch.index.engine.Engine.Refresh;
-import org.elasticsearch.index.engine.Engine.Searcher;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 
 public interface EngineFilter {
+
+    void doClose(EngineChain chain) throws ElasticsearchException;
 
     void doStart(EngineChain chain) throws EngineException;
 
@@ -31,9 +33,6 @@ public interface EngineFilter {
 
     GetResult doGet(Get get, EngineChain chain) throws EngineException;
 
-    Searcher doAcquireSearcher(String source, EngineChain chain)
-            throws EngineException;
-
     void doMaybeMerge(EngineChain chain) throws EngineException;
 
     void doRefresh(Refresh refresh, EngineChain chain) throws EngineException;
@@ -44,10 +43,12 @@ public interface EngineFilter {
     void doOptimize(Optimize optimize, EngineChain chain)
             throws EngineException;
 
-    SnapshotIndexCommit doSnapshotIndex(EngineChain chain) throws EngineException;
+    SnapshotIndexCommit doSnapshotIndex(EngineChain chain)
+            throws EngineException;
 
     void doRecover(RecoveryHandler recoveryHandler, EngineChain chain)
             throws EngineException;
+
     /**
      * The position of the filter in the chain. Execution is done from lowest order to highest.
      */

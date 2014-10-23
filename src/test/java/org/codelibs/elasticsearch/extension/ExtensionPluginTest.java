@@ -5,13 +5,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.log4j.Logger;
-import org.codelibs.elasticsearch.extension.filter.EngineFilter;
-import org.codelibs.elasticsearch.extension.filter.EngineFiltersUtil;
-import org.codelibs.elasticsearch.extension.filter.LoggingEngineFilter;
 import org.codelibs.elasticsearch.extension.filter.TestEngineFilter;
 import org.codelibs.elasticsearch.runner.ElasticsearchClusterRunner;
 import org.elasticsearch.action.index.IndexResponse;
@@ -33,20 +27,7 @@ public class ExtensionPluginTest {
         runner = new ElasticsearchClusterRunner();
         runner.onBuild(new ElasticsearchClusterRunner.Builder() {
             @Override
-            public void build(int index, Builder settingsBuilder) {
-                settingsBuilder.put("engine.filter.start", true);
-                settingsBuilder.put("engine.filter.create", true);
-                settingsBuilder.put("engine.filter.index", true);
-                settingsBuilder.put("engine.filter.delete", true);
-                settingsBuilder.put("engine.filter.delete_by_query", true);
-                settingsBuilder.put("engine.filter.get", true);
-                settingsBuilder.put("engine.filter.acquire_searcher", true);
-                settingsBuilder.put("engine.filter.maybe_merge", true);
-                settingsBuilder.put("engine.filter.refresh", true);
-                settingsBuilder.put("engine.filter.flush", true);
-                settingsBuilder.put("engine.filter.optimize", true);
-                settingsBuilder.put("engine.filter.snapshot_index", true);
-                settingsBuilder.put("engine.filter.recover", true);
+            public void build(final int index, final Builder settingsBuilder) {
             }
         }).build(newConfigs().numOfNode(1).ramIndexStore());
         runner.ensureGreen();
@@ -61,11 +42,6 @@ public class ExtensionPluginTest {
 
     @Test
     public void run_test() throws Exception {
-        TestEngineFilter testEngineFilter = new TestEngineFilter();
-        Set<EngineFilter> engineFilters = new HashSet<>();
-        engineFilters.add(new LoggingEngineFilter());
-        engineFilters.add(testEngineFilter);
-        EngineFiltersUtil.overwrite(engineFilters);
 
         assertThat(1, is(runner.getNodeSize()));
         final Client client = runner.client();
@@ -90,8 +66,10 @@ public class ExtensionPluginTest {
         runner.optimize(true);
         client.admin().indices().prepareRecoveries(index).execute();
 
-        logger.info(testEngineFilter.toString());
-        assertTrue(testEngineFilter.called());
+        for (TestEngineFilter testEngineFilter : TestEngineFilter.instances) {
+            logger.info(testEngineFilter.toString());
+        }
+        assertTrue(TestEngineFilter.instances.get(0).called());
 
     }
 }

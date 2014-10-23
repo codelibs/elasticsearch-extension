@@ -10,22 +10,16 @@ public class EngineFilters {
 
     private final EngineFilter[] filters;
 
-    private static EngineFilters INSTANCE;
-
     @Inject
-    public EngineFilters(Set<EngineFilter> engineFilters) {
-        this.filters = engineFilters.toArray(new EngineFilter[engineFilters
-                .size()]);
+    public EngineFilters(final Set<EngineFilter> engineFilters) {
+        filters = engineFilters.toArray(new EngineFilter[engineFilters.size()]);
         Arrays.sort(filters, new Comparator<EngineFilter>() {
             @Override
-            public int compare(EngineFilter o1, EngineFilter o2) {
+            public int compare(final EngineFilter o1, final EngineFilter o2) {
                 return Integer.compare(o1.order(), o2.order());
             }
         });
 
-        if (INSTANCE == null) {
-            INSTANCE = this;
-        }
     }
 
     /**
@@ -35,12 +29,4 @@ public class EngineFilters {
         return filters;
     }
 
-    public static EngineFilters get() {
-        return INSTANCE;
-    }
-
-    // for test
-    static void overwrite(Set<EngineFilter> engineFilters) {
-        INSTANCE = new EngineFilters(engineFilters);
-    }
 }

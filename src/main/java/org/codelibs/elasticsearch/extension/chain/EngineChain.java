@@ -1,7 +1,7 @@
 package org.codelibs.elasticsearch.extension.chain;
 
 import org.codelibs.elasticsearch.extension.filter.EngineFilter;
-import org.codelibs.elasticsearch.extension.filter.EngineFilters;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.Engine.Create;
@@ -14,13 +14,10 @@ import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
 import org.elasticsearch.index.engine.Engine.Refresh;
-import org.elasticsearch.index.engine.Engine.Searcher;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 
 public class EngineChain {
-
-    private static ThreadLocal<Boolean> running = new ThreadLocal<>();
 
     private Engine engine;
 
@@ -28,7 +25,7 @@ public class EngineChain {
 
     int position = 0;
 
-    protected EngineChain(Engine engine, EngineFilter[] filters) {
+    public EngineChain(final Engine engine, final EngineFilter[] filters) {
         this.engine = engine;
         this.filters = filters;
     }
@@ -37,9 +34,19 @@ public class EngineChain {
         return engine;
     }
 
+    public void doClose() throws ElasticsearchException {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            filter.doClose(this);
+        } else {
+            engine.close();
+        }
+    }
+
     public void doStart() throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doStart(this);
         } else {
@@ -47,9 +54,9 @@ public class EngineChain {
         }
     }
 
-    public void doCreate(Create create) throws EngineException {
+    public void doCreate(final Create create) throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doCreate(create, this);
         } else {
@@ -57,9 +64,9 @@ public class EngineChain {
         }
     }
 
-    public void doIndex(Index index) throws EngineException {
+    public void doIndex(final Index index) throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doIndex(index, this);
         } else {
@@ -67,9 +74,9 @@ public class EngineChain {
         }
     }
 
-    public void doDelete(Delete delete) throws EngineException {
+    public void doDelete(final Delete delete) throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doDelete(delete, this);
         } else {
@@ -77,9 +84,9 @@ public class EngineChain {
         }
     }
 
-    public void doDelete(DeleteByQuery delete) throws EngineException {
+    public void doDelete(final DeleteByQuery delete) throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doDelete(delete, this);
         } else {
@@ -87,9 +94,9 @@ public class EngineChain {
         }
     }
 
-    public GetResult doGet(Get get) throws EngineException {
+    public GetResult doGet(final Get get) throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             return filter.doGet(get, this);
         } else {
@@ -97,19 +104,9 @@ public class EngineChain {
         }
     }
 
-    public Searcher doAcquireSearcher(String source) throws EngineException {
-        if (position < filters.length) {
-            EngineFilter filter = filters[position];
-            position++;
-            return filter.doAcquireSearcher(source, this);
-        } else {
-            return engine.acquireSearcher(source);
-        }
-    }
-
     public void doMaybeMerge() throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doMaybeMerge(this);
         } else {
@@ -117,9 +114,9 @@ public class EngineChain {
         }
     }
 
-    public void doRefresh(Refresh refresh) throws EngineException {
+    public void doRefresh(final Refresh refresh) throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doRefresh(refresh, this);
         } else {
@@ -127,10 +124,10 @@ public class EngineChain {
         }
     }
 
-    public void doFlush(Flush flush) throws EngineException,
+    public void doFlush(final Flush flush) throws EngineException,
             FlushNotAllowedEngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doFlush(flush, this);
         } else {
@@ -138,9 +135,9 @@ public class EngineChain {
         }
     }
 
-    public void doOptimize(Optimize optimize) throws EngineException {
+    public void doOptimize(final Optimize optimize) throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doOptimize(optimize, this);
         } else {
@@ -150,7 +147,7 @@ public class EngineChain {
 
     public SnapshotIndexCommit doSnapshotIndex() throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             return filter.doSnapshotIndex(this);
         } else {
@@ -158,36 +155,15 @@ public class EngineChain {
         }
     }
 
-    public void doRecover(RecoveryHandler recoveryHandler)
+    public void doRecover(final RecoveryHandler recoveryHandler)
             throws EngineException {
         if (position < filters.length) {
-            EngineFilter filter = filters[position];
+            final EngineFilter filter = filters[position];
             position++;
             filter.doRecover(recoveryHandler, this);
         } else {
             engine.recover(recoveryHandler);
         }
-    }
-
-    public static EngineChain createEngineChain(final Engine engine, String key) {
-        if (engine.indexSettings().getAsBoolean(key, false)) {
-            EngineFilter[] filters = EngineFilters.get().filters();
-            return new EngineChain(engine, filters);
-        } else {
-            return null;
-        }
-    }
-
-    public static boolean begin() {
-        if (running.get() == null) {
-            running.set(Boolean.TRUE);
-            return true;
-        }
-        return false;
-    }
-
-    public static void end() {
-        running.remove();
     }
 
 }

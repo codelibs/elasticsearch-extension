@@ -1,7 +1,10 @@
 package org.codelibs.elasticsearch.extension.filter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
-import org.codelibs.elasticsearch.extension.filter.EngineFilter;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
@@ -13,11 +16,13 @@ import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
 import org.elasticsearch.index.engine.Engine.Refresh;
-import org.elasticsearch.index.engine.Engine.Searcher;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 
 public class TestEngineFilter implements EngineFilter {
+    public static List<TestEngineFilter> instances = new ArrayList<TestEngineFilter>();
+
+    private boolean doClose;
 
     private boolean doStart;
 
@@ -31,8 +36,6 @@ public class TestEngineFilter implements EngineFilter {
 
     private boolean doGet;
 
-    private boolean doAcquireSearcher;
-
     private boolean doMaybeMerge;
 
     private boolean doRefresh;
@@ -45,96 +48,100 @@ public class TestEngineFilter implements EngineFilter {
 
     private boolean doRecover;
 
+    public TestEngineFilter() {
+        instances.add(this);
+    }
+
     public boolean called() {
         return doStart && doIndex && doDelete && doDeleteByQuery && doGet
-                && doAcquireSearcher && doMaybeMerge && doRefresh && doFlush
-                && doOptimize;
-        // && doCreate && doSnapshotIndex && doRecover;
+                && doMaybeMerge && doRefresh && doFlush && doOptimize;
+        // && doCreate && doSnapshotIndex && doRecover && doClose;
     }
 
     @Override
-    public void doStart(EngineChain chain) throws EngineException {
+    public void doClose(final EngineChain chain) throws ElasticsearchException {
+        doClose = true;
+        chain.doClose();
+    }
+
+    @Override
+    public void doStart(final EngineChain chain) throws EngineException {
         doStart = true;
         chain.doStart();
     }
 
     @Override
-    public void doCreate(Create create, EngineChain chain)
+    public void doCreate(final Create create, final EngineChain chain)
             throws EngineException {
         doCreate = true;
         chain.doCreate(create);
     }
 
     @Override
-    public void doIndex(Index index, EngineChain chain) throws EngineException {
+    public void doIndex(final Index index, final EngineChain chain)
+            throws EngineException {
         doIndex = true;
         chain.doIndex(index);
     }
 
     @Override
-    public void doDelete(Delete delete, EngineChain chain)
+    public void doDelete(final Delete delete, final EngineChain chain)
             throws EngineException {
         doDelete = true;
         chain.doDelete(delete);
     }
 
     @Override
-    public void doDelete(DeleteByQuery delete, EngineChain chain)
+    public void doDelete(final DeleteByQuery delete, final EngineChain chain)
             throws EngineException {
         doDeleteByQuery = true;
         chain.doDelete(delete);
     }
 
     @Override
-    public GetResult doGet(Get get, EngineChain chain) throws EngineException {
+    public GetResult doGet(final Get get, final EngineChain chain)
+            throws EngineException {
         doGet = true;
         return chain.doGet(get);
     }
 
     @Override
-    public Searcher doAcquireSearcher(String source, EngineChain chain)
-            throws EngineException {
-        doAcquireSearcher = true;
-        return chain.doAcquireSearcher(source);
-    }
-
-    @Override
-    public void doMaybeMerge(EngineChain chain) throws EngineException {
+    public void doMaybeMerge(final EngineChain chain) throws EngineException {
         doMaybeMerge = true;
         chain.doMaybeMerge();
     }
 
     @Override
-    public void doRefresh(Refresh refresh, EngineChain chain)
+    public void doRefresh(final Refresh refresh, final EngineChain chain)
             throws EngineException {
         doRefresh = true;
         chain.doRefresh(refresh);
     }
 
     @Override
-    public void doFlush(Flush flush, EngineChain chain) throws EngineException,
-            FlushNotAllowedEngineException {
+    public void doFlush(final Flush flush, final EngineChain chain)
+            throws EngineException, FlushNotAllowedEngineException {
         doFlush = true;
         chain.doFlush(flush);
     }
 
     @Override
-    public void doOptimize(Optimize optimize, EngineChain chain)
+    public void doOptimize(final Optimize optimize, final EngineChain chain)
             throws EngineException {
         doOptimize = true;
         chain.doOptimize(optimize);
     }
 
     @Override
-    public SnapshotIndexCommit doSnapshotIndex(EngineChain chain)
+    public SnapshotIndexCommit doSnapshotIndex(final EngineChain chain)
             throws EngineException {
         doSnapshotIndex = true;
         return chain.doSnapshotIndex();
     }
 
     @Override
-    public void doRecover(RecoveryHandler recoveryHandler, EngineChain chain)
-            throws EngineException {
+    public void doRecover(final RecoveryHandler recoveryHandler,
+            final EngineChain chain) throws EngineException {
         doRecover = true;
         chain.doRecover(recoveryHandler);
     }
@@ -146,14 +153,13 @@ public class TestEngineFilter implements EngineFilter {
 
     @Override
     public String toString() {
-        return "TestEngineFilter [doStart=" + doStart + ", doCreate="
-                + doCreate + ", doIndex=" + doIndex + ", doDelete=" + doDelete
-                + ", doDeleteByQuery=" + doDeleteByQuery + ", doGet=" + doGet
-                + ", doAcquireSearcher=" + doAcquireSearcher
-                + ", doMaybeMerge=" + doMaybeMerge + ", doRefresh=" + doRefresh
-                + ", doFlush=" + doFlush + ", doOptimize=" + doOptimize
-                + ", doSnapshotIndex=" + doSnapshotIndex + ", doRecover="
-                + doRecover + "]";
+        return "TestEngineFilter [doClose=" + doClose + ", doStart=" + doStart
+                + ", doCreate=" + doCreate + ", doIndex=" + doIndex
+                + ", doDelete=" + doDelete + ", doDeleteByQuery="
+                + doDeleteByQuery + ", doGet=" + doGet + ", doMaybeMerge="
+                + doMaybeMerge + ", doRefresh=" + doRefresh + ", doFlush="
+                + doFlush + ", doOptimize=" + doOptimize + ", doSnapshotIndex="
+                + doSnapshotIndex + ", doRecover=" + doRecover + "]";
     }
 
 }
