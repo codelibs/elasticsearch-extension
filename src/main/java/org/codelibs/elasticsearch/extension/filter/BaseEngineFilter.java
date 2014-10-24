@@ -1,6 +1,7 @@
 package org.codelibs.elasticsearch.extension.filter;
 
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
@@ -16,6 +17,11 @@ import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 
 public abstract class BaseEngineFilter implements EngineFilter {
+
+    @Override
+    public void doClose(final EngineChain chain) throws ElasticsearchException {
+        chain.doClose();
+    }
 
     @Override
     public void doStart(final EngineChain chain) throws EngineException {
