@@ -29,7 +29,9 @@ public class ExtensionPluginTest {
             @Override
             public void build(final int index, final Builder settingsBuilder) {
             }
-        }).build(newConfigs().numOfNode(1).ramIndexStore());
+        }).build(
+                newConfigs().numOfNode(1).ramIndexStore()
+                        .clusterName("es-ext-" + System.currentTimeMillis()));
         runner.ensureGreen();
 
     }
