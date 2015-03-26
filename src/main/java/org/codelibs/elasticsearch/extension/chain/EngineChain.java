@@ -13,25 +13,34 @@ import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
+import org.elasticsearch.index.engine.EngineConfig;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 import org.elasticsearch.index.engine.Segment;
 
 public class EngineChain {
 
-    private Engine engine;
+    private final Engine engine;
 
-    private EngineFilter[] filters;
+    private final EngineConfig engineConfig;
+
+    private final EngineFilter[] filters;
 
     int position = 0;
 
-    public EngineChain(final Engine engine, final EngineFilter[] filters) {
+    public EngineChain(final Engine engine, final EngineConfig engineConfig,
+            final EngineFilter[] filters) {
         this.engine = engine;
+        this.engineConfig = engineConfig;
         this.filters = filters;
     }
 
     public Engine getEngine() {
         return engine;
+    }
+
+    public EngineConfig getEngineConfig() {
+        return engineConfig;
     }
 
     public void doClose() throws IOException {

@@ -59,27 +59,27 @@ public class ExtendedEngine extends Engine {
 
     @Override
     public void create(final Create create) throws EngineException {
-        new EngineChain(engine, filters).doCreate(create);
+        new EngineChain(engine, engineConfig, filters).doCreate(create);
     }
 
     @Override
     public void index(final Index index) throws EngineException {
-        new EngineChain(engine, filters).doIndex(index);
+        new EngineChain(engine, engineConfig, filters).doIndex(index);
     }
 
     @Override
     public void delete(final Delete delete) throws EngineException {
-        new EngineChain(engine, filters).doDelete(delete);
+        new EngineChain(engine, engineConfig, filters).doDelete(delete);
     }
 
     @Override
     public void delete(final DeleteByQuery delete) throws EngineException {
-        new EngineChain(engine, filters).doDelete(delete);
+        new EngineChain(engine, engineConfig, filters).doDelete(delete);
     }
 
     @Override
     public GetResult get(final Get get) throws EngineException {
-        return new EngineChain(engine, filters).doGet(get);
+        return new EngineChain(engine, engineConfig, filters).doGet(get);
     }
 
     @Override
@@ -89,28 +89,30 @@ public class ExtendedEngine extends Engine {
 
     @Override
     public List<Segment> segments() {
-        return new EngineChain(engine, filters).doSegments();
+        return new EngineChain(engine, engineConfig, filters).doSegments();
     }
 
     @Override
     public boolean possibleMergeNeeded() {
-        return new EngineChain(engine, filters).doPossibleMergeNeeded();
+        return new EngineChain(engine, engineConfig, filters)
+                .doPossibleMergeNeeded();
     }
 
     @Override
     public void maybeMerge() throws EngineException {
-        new EngineChain(engine, filters).doMaybeMerge();
+        new EngineChain(engine, engineConfig, filters).doMaybeMerge();
     }
 
     @Override
     public void refresh(final String source) throws EngineException {
-        new EngineChain(engine, filters).doRefresh(source);
+        new EngineChain(engine, engineConfig, filters).doRefresh(source);
     }
 
     @Override
     public void flush(final boolean force, final boolean waitIfOngoing)
             throws EngineException {
-        new EngineChain(engine, filters).doFlush(force, waitIfOngoing);
+        new EngineChain(engine, engineConfig, filters).doFlush(force,
+                waitIfOngoing);
     }
 
     @Override
@@ -127,34 +129,36 @@ public class ExtendedEngine extends Engine {
     public void forceMerge(final boolean flush, final int maxNumSegments,
             final boolean onlyExpungeDeletes, final boolean upgrade)
             throws EngineException {
-        new EngineChain(engine, filters).doForceMerge(flush, maxNumSegments,
-                onlyExpungeDeletes, upgrade);
+        new EngineChain(engine, engineConfig, filters).doForceMerge(flush,
+                maxNumSegments, onlyExpungeDeletes, upgrade);
     }
 
     @Override
     public SnapshotIndexCommit snapshotIndex() throws EngineException {
-        return new EngineChain(engine, filters).doSnapshotIndex();
+        return new EngineChain(engine, engineConfig, filters).doSnapshotIndex();
     }
 
     @Override
     public void recover(final RecoveryHandler recoveryHandler)
             throws EngineException {
-        new EngineChain(engine, filters).doRecover(recoveryHandler);
+        new EngineChain(engine, engineConfig, filters)
+                .doRecover(recoveryHandler);
     }
 
     @Override
     public void failEngine(final String reason, final Throwable failure) {
-        new EngineChain(engine, filters).doFailEngine(reason, failure);
+        new EngineChain(engine, engineConfig, filters).doFailEngine(reason,
+                failure);
     }
 
     @Override
     public void flushAndClose() throws IOException {
-        new EngineChain(engine, filters).doFlushAndClose();
+        new EngineChain(engine, engineConfig, filters).doFlushAndClose();
     }
 
     @Override
     public void close() throws IOException {
-        new EngineChain(engine, filters).doClose();
+        new EngineChain(engine, engineConfig, filters).doClose();
     }
 
     @Override
