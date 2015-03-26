@@ -66,7 +66,8 @@ public class ExtensionPluginTest {
         client.prepareDeleteByQuery(index)
                 .setQuery(QueryBuilders.queryStringQuery("id:2")).execute();
         runner.flush();
-        runner.optimize(true);
+        runner.optimize();
+        runner.upgrade();
         client.admin().indices().prepareRecoveries(index).execute();
 
         for (final TestEngineFilter testEngineFilter : TestEngineFilter.instances) {
