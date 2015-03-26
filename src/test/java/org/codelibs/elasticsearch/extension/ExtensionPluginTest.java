@@ -28,6 +28,7 @@ public class ExtensionPluginTest {
         runner.onBuild(new ElasticsearchClusterRunner.Builder() {
             @Override
             public void build(final int index, final Builder settingsBuilder) {
+                settingsBuilder.put("http.cors.enabled", true);
             }
         }).build(
                 newConfigs().numOfNode(1).ramIndexStore()
@@ -63,12 +64,12 @@ public class ExtensionPluginTest {
         runner.search(index, type, null, null, 0, 10);
         runner.delete(index, type, "1");
         client.prepareDeleteByQuery(index)
-                .setQuery(QueryBuilders.queryString("id:2")).execute();
+                .setQuery(QueryBuilders.queryStringQuery("id:2")).execute();
         runner.flush();
         runner.optimize(true);
         client.admin().indices().prepareRecoveries(index).execute();
 
-        for (TestEngineFilter testEngineFilter : TestEngineFilter.instances) {
+        for (final TestEngineFilter testEngineFilter : TestEngineFilter.instances) {
             logger.info(testEngineFilter.toString());
         }
         assertTrue(TestEngineFilter.instances.get(0).called());

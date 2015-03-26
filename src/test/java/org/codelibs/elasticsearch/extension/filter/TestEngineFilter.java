@@ -1,30 +1,26 @@
 package org.codelibs.elasticsearch.extension.filter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
-import org.elasticsearch.index.engine.Engine.Flush;
 import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
-import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
-import org.elasticsearch.index.engine.Engine.Refresh;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
+import org.elasticsearch.index.engine.Segment;
 
 public class TestEngineFilter implements EngineFilter {
     public static List<TestEngineFilter> instances = new ArrayList<TestEngineFilter>();
 
     private boolean doClose;
-
-    private boolean doStart;
 
     private boolean doCreate;
 
@@ -42,32 +38,36 @@ public class TestEngineFilter implements EngineFilter {
 
     private boolean doFlush;
 
-    private boolean doOptimize;
-
     private boolean doSnapshotIndex;
 
     private boolean doRecover;
+
+    private boolean doSegments;
+
+    private boolean doPossibleMergeNeeded;
+
+    private boolean doForceMerge;
+
+    private boolean doFailEngine;
+
+    private boolean doFlushAndClose;
 
     public TestEngineFilter() {
         instances.add(this);
     }
 
     public boolean called() {
-        return doStart && doIndex && doDelete && doDeleteByQuery && doGet
-                && doMaybeMerge && doRefresh && doFlush && doOptimize;
-        // && doCreate && doSnapshotIndex && doRecover && doClose;
+        return doIndex && doDelete && doDeleteByQuery && doGet && doMaybeMerge
+                && doRefresh && doFlush && doPossibleMergeNeeded
+                && doForceMerge;
+        // && doCreate && doSnapshotIndex && doRecover && doClose 
+        // && doSegments && doFailEngine && doFlushAndClose
     }
 
     @Override
-    public void doClose(final EngineChain chain) throws ElasticsearchException {
+    public void doClose(final EngineChain chain) throws IOException {
         doClose = true;
         chain.doClose();
-    }
-
-    @Override
-    public void doStart(final EngineChain chain) throws EngineException {
-        doStart = true;
-        chain.doStart();
     }
 
     @Override
@@ -112,24 +112,18 @@ public class TestEngineFilter implements EngineFilter {
     }
 
     @Override
-    public void doRefresh(final Refresh refresh, final EngineChain chain)
+    public void doRefresh(final String source, final EngineChain chain)
             throws EngineException {
         doRefresh = true;
-        chain.doRefresh(refresh);
+        chain.doRefresh(source);
     }
 
     @Override
-    public void doFlush(final Flush flush, final EngineChain chain)
-            throws EngineException, FlushNotAllowedEngineException {
+    public void doFlush(final boolean force, final boolean waitIfOngoing,
+            final EngineChain chain) throws EngineException,
+            FlushNotAllowedEngineException {
         doFlush = true;
-        chain.doFlush(flush);
-    }
-
-    @Override
-    public void doOptimize(final Optimize optimize, final EngineChain chain)
-            throws EngineException {
-        doOptimize = true;
-        chain.doOptimize(optimize);
+        chain.doFlush(force, waitIfOngoing);
     }
 
     @Override
@@ -147,19 +141,55 @@ public class TestEngineFilter implements EngineFilter {
     }
 
     @Override
+    public List<Segment> doSegments(final EngineChain chain) {
+        doSegments = true;
+        return chain.doSegments();
+    }
+
+    @Override
+    public boolean doPossibleMergeNeeded(final EngineChain chain) {
+        doPossibleMergeNeeded = true;
+        return chain.doPossibleMergeNeeded();
+    }
+
+    @Override
+    public void doForceMerge(final boolean flush, final int maxNumSegments,
+            final boolean onlyExpungeDeletes, final boolean upgrade,
+            final EngineChain chain) {
+        doForceMerge = true;
+        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade);
+    }
+
+    @Override
+    public void doFailEngine(final String reason, final Throwable failure,
+            final EngineChain chain) {
+        doFailEngine = true;
+        chain.doFailEngine(reason, failure);
+    }
+
+    @Override
+    public void doFlushAndClose(final EngineChain chain) throws IOException {
+        doFlushAndClose = true;
+        chain.doFlushAndClose();
+    }
+
+    @Override
     public int order() {
         return 10;
     }
 
     @Override
     public String toString() {
-        return "TestEngineFilter [doClose=" + doClose + ", doStart=" + doStart
-                + ", doCreate=" + doCreate + ", doIndex=" + doIndex
-                + ", doDelete=" + doDelete + ", doDeleteByQuery="
-                + doDeleteByQuery + ", doGet=" + doGet + ", doMaybeMerge="
-                + doMaybeMerge + ", doRefresh=" + doRefresh + ", doFlush="
-                + doFlush + ", doOptimize=" + doOptimize + ", doSnapshotIndex="
-                + doSnapshotIndex + ", doRecover=" + doRecover + "]";
+        return "TestEngineFilter [doClose=" + doClose + ", doCreate="
+                + doCreate + ", doIndex=" + doIndex + ", doDelete=" + doDelete
+                + ", doDeleteByQuery=" + doDeleteByQuery + ", doGet=" + doGet
+                + ", doMaybeMerge=" + doMaybeMerge + ", doRefresh=" + doRefresh
+                + ", doFlush=" + doFlush + ", doSnapshotIndex="
+                + doSnapshotIndex + ", doRecover=" + doRecover
+                + ", doSegments=" + doSegments + ", doPossibleMergeNeeded="
+                + doPossibleMergeNeeded + ", doForceMerge=" + doForceMerge
+                + ", doFailEngine=" + doFailEngine + ", doFlushAndClose="
+                + doFlushAndClose + "]";
     }
 
 }

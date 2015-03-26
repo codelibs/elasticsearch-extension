@@ -2,13 +2,13 @@ package org.codelibs.elasticsearch.extension;
 
 import java.util.Collection;
 
-import org.codelibs.elasticsearch.extension.module.ExtendedEngineModule;
+import org.codelibs.elasticsearch.extension.engine.ExtendedEngineFactory;
 import org.codelibs.elasticsearch.extension.module.ExtensionModule;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.engine.IndexEngineModule;
+import org.elasticsearch.index.shard.IndexShardModule;
 import org.elasticsearch.plugins.AbstractPlugin;
 
 public class ExtensionPlugin extends AbstractPlugin {
@@ -38,11 +38,11 @@ public class ExtensionPlugin extends AbstractPlugin {
 
     @Override
     public Settings additionalSettings() {
-        if (settings.get(IndexEngineModule.EngineSettings.ENGINE_TYPE) == null) {
+        if (settings.get(IndexShardModule.ENGINE_FACTORY) == null) {
             return ImmutableSettings
                     .builder()
-                    .put(IndexEngineModule.EngineSettings.ENGINE_TYPE,
-                            ExtendedEngineModule.class.getName()).build();
+                    .put(IndexShardModule.ENGINE_FACTORY,
+                            ExtendedEngineFactory.class.getName()).build();
         } else {
             return ImmutableSettings.Builder.EMPTY_SETTINGS;
         }

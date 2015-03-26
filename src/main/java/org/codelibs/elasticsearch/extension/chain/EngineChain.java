@@ -1,21 +1,21 @@
 package org.codelibs.elasticsearch.extension.chain;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.codelibs.elasticsearch.extension.filter.EngineFilter;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
-import org.elasticsearch.index.engine.Engine.Flush;
 import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
-import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
-import org.elasticsearch.index.engine.Engine.Refresh;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
+import org.elasticsearch.index.engine.Segment;
 
 public class EngineChain {
 
@@ -34,23 +34,13 @@ public class EngineChain {
         return engine;
     }
 
-    public void doClose() throws ElasticsearchException {
+    public void doClose() throws IOException {
         if (position < filters.length) {
             final EngineFilter filter = filters[position];
             position++;
             filter.doClose(this);
         } else {
             engine.close();
-        }
-    }
-
-    public void doStart() throws EngineException {
-        if (position < filters.length) {
-            final EngineFilter filter = filters[position];
-            position++;
-            filter.doStart(this);
-        } else {
-            engine.start();
         }
     }
 
@@ -114,34 +104,24 @@ public class EngineChain {
         }
     }
 
-    public void doRefresh(final Refresh refresh) throws EngineException {
+    public void doRefresh(final String source) throws EngineException {
         if (position < filters.length) {
             final EngineFilter filter = filters[position];
             position++;
-            filter.doRefresh(refresh, this);
+            filter.doRefresh(source, this);
         } else {
-            engine.refresh(refresh);
+            engine.refresh(source);
         }
     }
 
-    public void doFlush(final Flush flush) throws EngineException,
-            FlushNotAllowedEngineException {
+    public void doFlush(final boolean force, final boolean waitIfOngoing)
+            throws EngineException, FlushNotAllowedEngineException {
         if (position < filters.length) {
             final EngineFilter filter = filters[position];
             position++;
-            filter.doFlush(flush, this);
+            filter.doFlush(force, waitIfOngoing, this);
         } else {
-            engine.flush(flush);
-        }
-    }
-
-    public void doOptimize(final Optimize optimize) throws EngineException {
-        if (position < filters.length) {
-            final EngineFilter filter = filters[position];
-            position++;
-            filter.doOptimize(optimize, this);
-        } else {
-            engine.optimize(optimize);
+            engine.flush(force, waitIfOngoing);
         }
     }
 
@@ -163,6 +143,59 @@ public class EngineChain {
             filter.doRecover(recoveryHandler, this);
         } else {
             engine.recover(recoveryHandler);
+        }
+    }
+
+    public List<Segment> doSegments() {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            return filter.doSegments(this);
+        } else {
+            return engine.segments();
+        }
+    }
+
+    public boolean doPossibleMergeNeeded() {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            return filter.doPossibleMergeNeeded(this);
+        } else {
+            return engine.possibleMergeNeeded();
+        }
+    }
+
+    public void doForceMerge(final boolean flush, final int maxNumSegments,
+            final boolean onlyExpungeDeletes, final boolean upgrade) {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            filter.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes,
+                    upgrade, this);
+        } else {
+            engine.forceMerge(flush, maxNumSegments, onlyExpungeDeletes,
+                    upgrade);
+        }
+    }
+
+    public void doFailEngine(final String reason, final Throwable failure) {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            filter.doFailEngine(reason, failure, this);
+        } else {
+            engine.failEngine(reason, failure);
+        }
+    }
+
+    public void doFlushAndClose() throws IOException {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            filter.doFlushAndClose(this);
+        } else {
+            engine.flushAndClose();
         }
     }
 

@@ -1,31 +1,26 @@
 package org.codelibs.elasticsearch.extension.filter;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
-import org.elasticsearch.index.engine.Engine.Flush;
 import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
-import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
-import org.elasticsearch.index.engine.Engine.Refresh;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
+import org.elasticsearch.index.engine.Segment;
 
 public abstract class BaseEngineFilter implements EngineFilter {
 
     @Override
-    public void doClose(final EngineChain chain) throws ElasticsearchException {
+    public void doClose(final EngineChain chain) throws IOException {
         chain.doClose();
-    }
-
-    @Override
-    public void doStart(final EngineChain chain) throws EngineException {
-        chain.doStart();
     }
 
     @Override
@@ -64,21 +59,16 @@ public abstract class BaseEngineFilter implements EngineFilter {
     }
 
     @Override
-    public void doRefresh(final Refresh refresh, final EngineChain chain)
+    public void doRefresh(final String source, final EngineChain chain)
             throws EngineException {
-        chain.doRefresh(refresh);
+        chain.doRefresh(source);
     }
 
     @Override
-    public void doFlush(final Flush flush, final EngineChain chain)
-            throws EngineException, FlushNotAllowedEngineException {
-        chain.doFlush(flush);
-    }
-
-    @Override
-    public void doOptimize(final Optimize optimize, final EngineChain chain)
-            throws EngineException {
-        chain.doOptimize(optimize);
+    public void doFlush(final boolean force, final boolean waitIfOngoing,
+            final EngineChain chain) throws EngineException,
+            FlushNotAllowedEngineException {
+        chain.doFlush(force, waitIfOngoing);
     }
 
     @Override
@@ -91,6 +81,34 @@ public abstract class BaseEngineFilter implements EngineFilter {
     public void doRecover(final RecoveryHandler recoveryHandler,
             final EngineChain chain) throws EngineException {
         chain.doRecover(recoveryHandler);
+    }
+
+    @Override
+    public List<Segment> doSegments(final EngineChain chain) {
+        return chain.doSegments();
+    }
+
+    @Override
+    public boolean doPossibleMergeNeeded(final EngineChain chain) {
+        return chain.doPossibleMergeNeeded();
+    }
+
+    @Override
+    public void doForceMerge(final boolean flush, final int maxNumSegments,
+            final boolean onlyExpungeDeletes, final boolean upgrade,
+            final EngineChain chain) {
+        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade);
+    }
+
+    @Override
+    public void doFailEngine(final String reason, final Throwable failure,
+            final EngineChain chain) {
+        chain.doFailEngine(reason, failure);
+    }
+
+    @Override
+    public void doFlushAndClose(final EngineChain chain) throws IOException {
+        chain.doFlushAndClose();
     }
 
     @Override

@@ -1,188 +1,183 @@
 package org.codelibs.elasticsearch.extension.engine;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 
+import org.apache.lucene.search.SearcherManager;
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
 import org.codelibs.elasticsearch.extension.filter.EngineFilter;
 import org.codelibs.elasticsearch.extension.filter.EngineFilters;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.analysis.AnalysisService;
-import org.elasticsearch.index.codec.CodecService;
-import org.elasticsearch.index.deletionpolicy.SnapshotDeletionPolicy;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine;
+import org.elasticsearch.index.engine.EngineConfig;
 import org.elasticsearch.index.engine.EngineException;
-import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
+import org.elasticsearch.index.engine.InternalEngine;
 import org.elasticsearch.index.engine.Segment;
-import org.elasticsearch.index.engine.SegmentsStats;
-import org.elasticsearch.index.engine.internal.InternalEngine;
-import org.elasticsearch.index.indexing.ShardIndexingService;
-import org.elasticsearch.index.merge.policy.MergePolicyProvider;
-import org.elasticsearch.index.merge.scheduler.MergeSchedulerProvider;
-import org.elasticsearch.index.settings.IndexSettingsService;
-import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.index.similarity.SimilarityService;
-import org.elasticsearch.index.store.Store;
-import org.elasticsearch.index.translog.Translog;
-import org.elasticsearch.indices.warmer.IndicesWarmer;
-import org.elasticsearch.threadpool.ThreadPool;
 
-public class ExtendedEngine implements Engine {
+public class ExtendedEngine extends Engine {
 
-    private EngineFilter[] filters;
+    private final EngineFilter[] filters;
 
-    private InternalEngine internalEngine;
+    private final Engine engine;
 
-    @Inject
-    public ExtendedEngine(final ShardId shardId, final Settings indexSettings,
-            final ThreadPool threadPool,
-            final IndexSettingsService indexSettingsService,
-            final ShardIndexingService indexingService,
-            final IndicesWarmer warmer, final Store store,
-            final SnapshotDeletionPolicy deletionPolicy,
-            final Translog translog,
-            final MergePolicyProvider mergePolicyProvider,
-            final MergeSchedulerProvider mergeScheduler,
-            final AnalysisService analysisService,
-            final SimilarityService similarityService,
-            final CodecService codecService, final EngineFilters engineFilters)
-            throws EngineException {
-        internalEngine = new InternalEngine(shardId, indexSettings, threadPool,
-                indexSettingsService, indexingService, warmer, store,
-                deletionPolicy, translog, mergePolicyProvider, mergeScheduler,
-                analysisService, similarityService, codecService);
+    private Method getSearcherManagerMethod;
+
+    private Method closeNoLockMethod;
+
+    public ExtendedEngine(final EngineConfig engineConfig,
+            final EngineFilters engineFilters) throws EngineException {
+        super(engineConfig);
+        engine = new InternalEngine(engineConfig);
         filters = engineFilters.filters();
+
+        Class<? extends Engine> clazz = engine.getClass();
+        try {
+            getSearcherManagerMethod = clazz
+                    .getDeclaredMethod("getSearcherManager");
+            getSearcherManagerMethod.setAccessible(true);
+            closeNoLockMethod = clazz.getDeclaredMethod("closeNoLock",
+                    new Class<?>[] { String.class });
+            closeNoLockMethod.setAccessible(true);
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new EngineException(shardId, "Cannot load methods from "
+                    + clazz.getName(), e);
+        }
     }
 
     @Override
-    public void close() throws ElasticsearchException {
-        new EngineChain(internalEngine, filters).doClose();
+    public int hashCode() {
+        return engine.hashCode();
     }
 
     @Override
-    public void start() throws EngineException {
-        new EngineChain(internalEngine, filters).doStart();
+    public boolean equals(final Object obj) {
+        return engine.equals(obj);
     }
 
     @Override
     public void create(final Create create) throws EngineException {
-        new EngineChain(internalEngine, filters).doCreate(create);
+        new EngineChain(engine, filters).doCreate(create);
     }
 
     @Override
     public void index(final Index index) throws EngineException {
-        new EngineChain(internalEngine, filters).doIndex(index);
+        new EngineChain(engine, filters).doIndex(index);
     }
 
     @Override
     public void delete(final Delete delete) throws EngineException {
-        new EngineChain(internalEngine, filters).doDelete(delete);
+        new EngineChain(engine, filters).doDelete(delete);
     }
 
     @Override
     public void delete(final DeleteByQuery delete) throws EngineException {
-        new EngineChain(internalEngine, filters).doDelete(delete);
+        new EngineChain(engine, filters).doDelete(delete);
     }
 
     @Override
     public GetResult get(final Get get) throws EngineException {
-        return new EngineChain(internalEngine, filters).doGet(get);
+        return new EngineChain(engine, filters).doGet(get);
+    }
+
+    @Override
+    public String toString() {
+        return engine.toString();
+    }
+
+    @Override
+    public List<Segment> segments() {
+        return new EngineChain(engine, filters).doSegments();
+    }
+
+    @Override
+    public boolean possibleMergeNeeded() {
+        return new EngineChain(engine, filters).doPossibleMergeNeeded();
     }
 
     @Override
     public void maybeMerge() throws EngineException {
-        new EngineChain(internalEngine, filters).doMaybeMerge();
+        new EngineChain(engine, filters).doMaybeMerge();
     }
 
     @Override
-    public void refresh(final Refresh refresh) throws EngineException {
-        new EngineChain(internalEngine, filters).doRefresh(refresh);
+    public void refresh(final String source) throws EngineException {
+        new EngineChain(engine, filters).doRefresh(source);
     }
 
     @Override
-    public void flush(final Flush flush) throws EngineException,
-            FlushNotAllowedEngineException {
-        new EngineChain(internalEngine, filters).doFlush(flush);
+    public void flush(final boolean force, final boolean waitIfOngoing)
+            throws EngineException {
+        new EngineChain(engine, filters).doFlush(force, waitIfOngoing);
     }
 
     @Override
-    public void optimize(final Optimize optimize) throws EngineException {
-        new EngineChain(internalEngine, filters).doOptimize(optimize);
+    public void flush() throws EngineException {
+        flush(false, false);
+    }
+
+    @Override
+    public void forceMerge(final boolean flush) {
+        forceMerge(flush, 1, false, false);
+    }
+
+    @Override
+    public void forceMerge(final boolean flush, final int maxNumSegments,
+            final boolean onlyExpungeDeletes, final boolean upgrade)
+            throws EngineException {
+        new EngineChain(engine, filters).doForceMerge(flush, maxNumSegments,
+                onlyExpungeDeletes, upgrade);
     }
 
     @Override
     public SnapshotIndexCommit snapshotIndex() throws EngineException {
-        return new EngineChain(internalEngine, filters).doSnapshotIndex();
+        return new EngineChain(engine, filters).doSnapshotIndex();
     }
 
     @Override
     public void recover(final RecoveryHandler recoveryHandler)
             throws EngineException {
-        new EngineChain(internalEngine, filters).doRecover(recoveryHandler);
+        new EngineChain(engine, filters).doRecover(recoveryHandler);
     }
 
     @Override
-    public ShardId shardId() {
-        return internalEngine.shardId();
+    public void failEngine(final String reason, final Throwable failure) {
+        new EngineChain(engine, filters).doFailEngine(reason, failure);
     }
 
     @Override
-    public Settings indexSettings() {
-        return internalEngine.indexSettings();
+    public void flushAndClose() throws IOException {
+        new EngineChain(engine, filters).doFlushAndClose();
     }
 
     @Override
-    public TimeValue defaultRefreshInterval() {
-        return internalEngine.defaultRefreshInterval();
+    public void close() throws IOException {
+        new EngineChain(engine, filters).doClose();
     }
 
     @Override
-    public void enableGcDeletes(boolean enableGcDeletes) {
-        internalEngine.enableGcDeletes(enableGcDeletes);
+    protected SearcherManager getSearcherManager() {
+        try {
+            return (SearcherManager) getSearcherManagerMethod.invoke(engine);
+        } catch (IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException e) {
+            throw new ExtendedEngineException(
+                    "Cannot invoke getSearcherManager() of " + engine, e);
+        }
     }
 
     @Override
-    public void updateIndexingBufferSize(ByteSizeValue indexingBufferSize) {
-        internalEngine.updateIndexingBufferSize(indexingBufferSize);
-    }
-
-    @Override
-    public void addFailedEngineListener(FailedEngineListener listener) {
-        internalEngine.addFailedEngineListener(listener);
-    }
-
-    @Override
-    public Searcher acquireSearcher(String source) throws EngineException {
-        return internalEngine.acquireSearcher(source);
-    }
-
-    @Override
-    public SegmentsStats segmentsStats() {
-        return internalEngine.segmentsStats();
-    }
-
-    @Override
-    public List<Segment> segments() {
-        return internalEngine.segments();
-    }
-
-    @Override
-    public boolean refreshNeeded() {
-        return internalEngine.refreshNeeded();
-    }
-
-    @Override
-    public boolean possibleMergeNeeded() {
-        return internalEngine.possibleMergeNeeded();
-    }
-
-    @Override
-    public void failEngine(String reason, Throwable failure) {
-        internalEngine.failEngine(reason, failure);
+    protected void closeNoLock(final String reason)
+            throws ElasticsearchException {
+        try {
+            closeNoLockMethod.invoke(engine, new Object[] { reason });
+        } catch (IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException e) {
+            throw new ExtendedEngineException("Cannot invoke closeNoLock() of "
+                    + engine, e);
+        }
     }
 
 }

@@ -1,26 +1,24 @@
 package org.codelibs.elasticsearch.extension.filter;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
-import org.elasticsearch.index.engine.Engine.Flush;
 import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
-import org.elasticsearch.index.engine.Engine.Optimize;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
-import org.elasticsearch.index.engine.Engine.Refresh;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
+import org.elasticsearch.index.engine.Segment;
 
 public interface EngineFilter {
 
-    void doClose(EngineChain chain) throws ElasticsearchException;
-
-    void doStart(EngineChain chain) throws EngineException;
+    void doClose(EngineChain chain) throws IOException;
 
     void doCreate(Create create, EngineChain chain) throws EngineException;
 
@@ -35,19 +33,27 @@ public interface EngineFilter {
 
     void doMaybeMerge(EngineChain chain) throws EngineException;
 
-    void doRefresh(Refresh refresh, EngineChain chain) throws EngineException;
+    void doRefresh(String source, EngineChain chain) throws EngineException;
 
-    void doFlush(Flush flush, EngineChain chain) throws EngineException,
-            FlushNotAllowedEngineException;
-
-    void doOptimize(Optimize optimize, EngineChain chain)
-            throws EngineException;
+    void doFlush(boolean force, boolean waitIfOngoing, EngineChain chain)
+            throws EngineException, FlushNotAllowedEngineException;
 
     SnapshotIndexCommit doSnapshotIndex(EngineChain chain)
             throws EngineException;
 
     void doRecover(RecoveryHandler recoveryHandler, EngineChain chain)
             throws EngineException;
+
+    List<Segment> doSegments(EngineChain chain);
+
+    boolean doPossibleMergeNeeded(EngineChain chain);
+
+    void doForceMerge(boolean flush, int maxNumSegments,
+            boolean onlyExpungeDeletes, boolean upgrade, EngineChain chain);
+
+    void doFailEngine(String reason, Throwable failure, EngineChain chain);
+
+    void doFlushAndClose(EngineChain chain) throws IOException;
 
     /**
      * The position of the filter in the chain. Execution is done from lowest order to highest.

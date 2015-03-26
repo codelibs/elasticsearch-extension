@@ -15,9 +15,9 @@ public class ExtensionModule extends AbstractModule {
     @Override
     protected void configure() {
 
-        Multibinder<EngineFilter> engineFilterMultibinder = Multibinder
+        final Multibinder<EngineFilter> engineFilterMultibinder = Multibinder
                 .newSetBinder(binder(), EngineFilter.class);
-        for (Class<? extends EngineFilter> engineFilter : engineFilters) {
+        for (final Class<? extends EngineFilter> engineFilter : engineFilters) {
             engineFilterMultibinder.addBinding().to(engineFilter);
         }
         bind(EngineFilters.class).asEagerSingleton();
@@ -25,8 +25,8 @@ public class ExtensionModule extends AbstractModule {
     }
 
     public ExtensionModule registerEngineFilter(
-            Class<? extends EngineFilter> engineFilter) {
-        this.engineFilters.add(engineFilter);
+            final Class<? extends EngineFilter> engineFilter) {
+        engineFilters.add(engineFilter);
         return this;
     }
 }
