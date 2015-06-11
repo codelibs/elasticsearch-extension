@@ -6,6 +6,7 @@ import java.util.List;
 import org.codelibs.elasticsearch.extension.filter.EngineFilter;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
 import org.elasticsearch.index.engine.Engine;
+import org.elasticsearch.index.engine.Engine.CommitId;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
@@ -13,6 +14,7 @@ import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
+import org.elasticsearch.index.engine.Engine.SyncedFlushResult;
 import org.elasticsearch.index.engine.EngineConfig;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
@@ -123,14 +125,14 @@ public class EngineChain {
         }
     }
 
-    public void doFlush(final boolean force, final boolean waitIfOngoing)
+    public CommitId doFlush(final boolean force, final boolean waitIfOngoing)
             throws EngineException, FlushNotAllowedEngineException {
         if (position < filters.length) {
             final EngineFilter filter = filters[position];
             position++;
-            filter.doFlush(force, waitIfOngoing, this);
+            return filter.doFlush(force, waitIfOngoing, this);
         } else {
-            engine.flush(force, waitIfOngoing);
+            return engine.flush(force, waitIfOngoing);
         }
     }
 
@@ -176,15 +178,16 @@ public class EngineChain {
     }
 
     public void doForceMerge(final boolean flush, final int maxNumSegments,
-            final boolean onlyExpungeDeletes, final boolean upgrade) {
+            final boolean onlyExpungeDeletes, final boolean upgrade,
+            final boolean upgradeOnlyAncientSegments) {
         if (position < filters.length) {
             final EngineFilter filter = filters[position];
             position++;
             filter.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes,
-                    upgrade, this);
+                    upgrade, upgradeOnlyAncientSegments, this);
         } else {
             engine.forceMerge(flush, maxNumSegments, onlyExpungeDeletes,
-                    upgrade);
+                    upgrade, upgradeOnlyAncientSegments);
         }
     }
 
@@ -205,6 +208,27 @@ public class EngineChain {
             filter.doFlushAndClose(this);
         } else {
             engine.flushAndClose();
+        }
+    }
+
+    public SyncedFlushResult syncFlush(String syncId,
+            CommitId expectedCommitId) {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            return filter.syncFlush(syncId, expectedCommitId,this);
+        } else {
+            return engine.syncFlush(syncId, expectedCommitId);
+        }
+    }
+
+    public boolean hasUncommittedChanges() {
+        if (position < filters.length) {
+            final EngineFilter filter = filters[position];
+            position++;
+            return filter.hasUncommittedChanges(this);
+        } else {
+            return engine.hasUncommittedChanges();
         }
     }
 

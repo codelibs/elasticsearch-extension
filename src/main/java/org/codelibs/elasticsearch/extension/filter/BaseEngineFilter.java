@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
+import org.elasticsearch.index.engine.Engine.CommitId;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
@@ -12,6 +13,7 @@ import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
+import org.elasticsearch.index.engine.Engine.SyncedFlushResult;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 import org.elasticsearch.index.engine.Segment;
@@ -65,10 +67,10 @@ public abstract class BaseEngineFilter implements EngineFilter {
     }
 
     @Override
-    public void doFlush(final boolean force, final boolean waitIfOngoing,
-            final EngineChain chain) throws EngineException,
-            FlushNotAllowedEngineException {
-        chain.doFlush(force, waitIfOngoing);
+    public CommitId doFlush(final boolean force, final boolean waitIfOngoing,
+            final EngineChain chain)
+                    throws EngineException, FlushNotAllowedEngineException {
+        return chain.doFlush(force, waitIfOngoing);
     }
 
     @Override
@@ -96,8 +98,9 @@ public abstract class BaseEngineFilter implements EngineFilter {
     @Override
     public void doForceMerge(final boolean flush, final int maxNumSegments,
             final boolean onlyExpungeDeletes, final boolean upgrade,
-            final EngineChain chain) {
-        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade);
+            final boolean upgradeOnlyAncientSegments, final EngineChain chain) {
+        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade,
+                upgradeOnlyAncientSegments);
     }
 
     @Override
@@ -109,6 +112,17 @@ public abstract class BaseEngineFilter implements EngineFilter {
     @Override
     public void doFlushAndClose(final EngineChain chain) throws IOException {
         chain.doFlushAndClose();
+    }
+
+    @Override
+    public SyncedFlushResult syncFlush(String syncId, CommitId expectedCommitId,
+            EngineChain chain) {
+        return chain.syncFlush(syncId, expectedCommitId);
+    }
+
+    @Override
+    public boolean hasUncommittedChanges(EngineChain chain) {
+        return chain.hasUncommittedChanges();
     }
 
     @Override

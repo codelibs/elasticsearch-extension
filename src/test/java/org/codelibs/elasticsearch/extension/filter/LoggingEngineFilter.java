@@ -7,6 +7,7 @@ import org.codelibs.elasticsearch.extension.chain.EngineChain;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
+import org.elasticsearch.index.engine.Engine.CommitId;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
@@ -14,6 +15,7 @@ import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
+import org.elasticsearch.index.engine.Engine.SyncedFlushResult;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 import org.elasticsearch.index.engine.Segment;
@@ -90,11 +92,11 @@ public class LoggingEngineFilter implements EngineFilter {
     }
 
     @Override
-    public void doFlush(final boolean force, final boolean waitIfOngoing,
+    public CommitId doFlush(final boolean force, final boolean waitIfOngoing,
             final EngineChain chain) throws EngineException,
             FlushNotAllowedEngineException {
         logger.info("doFlush({}, {})", force, waitIfOngoing);
-        chain.doFlush(force, waitIfOngoing);
+        return chain.doFlush(force, waitIfOngoing);
     }
 
     @Override
@@ -112,10 +114,11 @@ public class LoggingEngineFilter implements EngineFilter {
     @Override
     public void doForceMerge(final boolean flush, final int maxNumSegments,
             final boolean onlyExpungeDeletes, final boolean upgrade,
-            final EngineChain chain) {
+            final boolean upgradeOnlyAncientSegments, final EngineChain chain) {
         logger.info("doForceMerge({}, {}, {}, {})", flush, maxNumSegments,
                 onlyExpungeDeletes, upgrade);
-        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade);
+        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade,
+                upgradeOnlyAncientSegments);
     }
 
     @Override
@@ -129,6 +132,19 @@ public class LoggingEngineFilter implements EngineFilter {
     public void doFlushAndClose(final EngineChain chain) throws IOException {
         logger.info("doFlushAndClose()");
         chain.doFlushAndClose();
+    }
+
+    @Override
+    public SyncedFlushResult syncFlush(String syncId, CommitId expectedCommitId,
+            EngineChain chain) {
+        logger.info("syncFlush({}, {})", syncId, expectedCommitId);
+        return chain.syncFlush(syncId, expectedCommitId);
+    }
+
+    @Override
+    public boolean hasUncommittedChanges(EngineChain chain) {
+        logger.info("hasUncommittedChanges()");
+        return chain.hasUncommittedChanges();
     }
 
     @Override

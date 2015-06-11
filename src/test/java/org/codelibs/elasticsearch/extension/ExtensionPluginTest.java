@@ -5,6 +5,8 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
 import org.codelibs.elasticsearch.extension.filter.TestEngineFilter;
 import org.codelibs.elasticsearch.runner.ElasticsearchClusterRunner;
@@ -32,7 +34,7 @@ public class ExtensionPluginTest {
             }
         }).build(
                 newConfigs().numOfNode(1).ramIndexStore()
-                        .clusterName("es-ext-" + System.currentTimeMillis()));
+                        .clusterName(UUID.randomUUID().toString()));
         runner.ensureGreen();
 
     }

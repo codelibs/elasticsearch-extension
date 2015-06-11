@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.search.SearcherManager;
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
 import org.codelibs.elasticsearch.extension.filter.EngineFilter;
@@ -27,6 +28,8 @@ public class ExtendedEngine extends Engine {
 
     private Method closeNoLockMethod;
 
+    private Method getLastCommittedSegmentInfosMethod;
+
     public ExtendedEngine(final EngineConfig engineConfig,
             final EngineFilters engineFilters) throws EngineException {
         super(engineConfig);
@@ -41,9 +44,12 @@ public class ExtendedEngine extends Engine {
             closeNoLockMethod = clazz.getDeclaredMethod("closeNoLock",
                     new Class<?>[] { String.class });
             closeNoLockMethod.setAccessible(true);
+            getLastCommittedSegmentInfosMethod = clazz
+                    .getDeclaredMethod("getLastCommittedSegmentInfos");
+            getLastCommittedSegmentInfosMethod.setAccessible(true);
         } catch (NoSuchMethodException | SecurityException e) {
-            throw new EngineException(shardId, "Cannot load methods from "
-                    + clazz.getName(), e);
+            throw new EngineException(shardId,
+                    "Cannot load methods from " + clazz.getName(), e);
         }
     }
 
@@ -109,28 +115,29 @@ public class ExtendedEngine extends Engine {
     }
 
     @Override
-    public void flush(final boolean force, final boolean waitIfOngoing)
+    public CommitId flush(final boolean force, final boolean waitIfOngoing)
             throws EngineException {
-        new EngineChain(engine, engineConfig, filters).doFlush(force,
+        return new EngineChain(engine, engineConfig, filters).doFlush(force,
                 waitIfOngoing);
     }
 
     @Override
-    public void flush() throws EngineException {
-        flush(false, false);
+    public CommitId flush() throws EngineException {
+        return flush(false, false);
     }
 
     @Override
     public void forceMerge(final boolean flush) {
-        forceMerge(flush, 1, false, false);
+        forceMerge(flush, 1, false, false, false);
     }
 
     @Override
-    public void forceMerge(final boolean flush, final int maxNumSegments,
-            final boolean onlyExpungeDeletes, final boolean upgrade)
-            throws EngineException {
+    public void forceMerge(boolean flush, int maxNumSegments,
+            boolean onlyExpungeDeletes, boolean upgrade,
+            boolean upgradeOnlyAncientSegments) throws EngineException {
         new EngineChain(engine, engineConfig, filters).doForceMerge(flush,
-                maxNumSegments, onlyExpungeDeletes, upgrade);
+                maxNumSegments, onlyExpungeDeletes, upgrade,
+                upgradeOnlyAncientSegments);
     }
 
     @Override
@@ -162,6 +169,19 @@ public class ExtendedEngine extends Engine {
     }
 
     @Override
+    public SyncedFlushResult syncFlush(String syncId, CommitId expectedCommitId)
+            throws EngineException {
+        return new EngineChain(engine, engineConfig, filters).syncFlush(syncId,
+                expectedCommitId);
+    }
+
+    @Override
+    public boolean hasUncommittedChanges() {
+        return new EngineChain(engine, engineConfig, filters)
+                .hasUncommittedChanges();
+    }
+
+    @Override
     protected SearcherManager getSearcherManager() {
         try {
             return (SearcherManager) getSearcherManagerMethod.invoke(engine);
@@ -179,9 +199,21 @@ public class ExtendedEngine extends Engine {
             closeNoLockMethod.invoke(engine, new Object[] { reason });
         } catch (IllegalAccessException | IllegalArgumentException
                 | InvocationTargetException e) {
-            throw new ExtendedEngineException("Cannot invoke closeNoLock() of "
-                    + engine, e);
+            throw new ExtendedEngineException(
+                    "Cannot invoke closeNoLock() of " + engine, e);
         }
     }
 
+    @Override
+    protected SegmentInfos getLastCommittedSegmentInfos() {
+        try {
+            return (SegmentInfos) getLastCommittedSegmentInfosMethod
+                    .invoke(engine);
+        } catch (IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException e) {
+            throw new ExtendedEngineException(
+                    "Cannot invoke getLastCommittedSegmentInfos() of " + engine,
+                    e);
+        }
+    }
 }

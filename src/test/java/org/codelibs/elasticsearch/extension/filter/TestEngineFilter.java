@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.codelibs.elasticsearch.extension.chain.EngineChain;
 import org.elasticsearch.index.deletionpolicy.SnapshotIndexCommit;
+import org.elasticsearch.index.engine.Engine.CommitId;
 import org.elasticsearch.index.engine.Engine.Create;
 import org.elasticsearch.index.engine.Engine.Delete;
 import org.elasticsearch.index.engine.Engine.DeleteByQuery;
@@ -13,6 +14,7 @@ import org.elasticsearch.index.engine.Engine.Get;
 import org.elasticsearch.index.engine.Engine.GetResult;
 import org.elasticsearch.index.engine.Engine.Index;
 import org.elasticsearch.index.engine.Engine.RecoveryHandler;
+import org.elasticsearch.index.engine.Engine.SyncedFlushResult;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.FlushNotAllowedEngineException;
 import org.elasticsearch.index.engine.Segment;
@@ -52,6 +54,10 @@ public class TestEngineFilter implements EngineFilter {
 
     private boolean doFlushAndClose;
 
+    private boolean doSyncFlush;
+
+    private boolean doHasUncommittedChanges;
+
     public TestEngineFilter() {
         instances.add(this);
     }
@@ -62,6 +68,7 @@ public class TestEngineFilter implements EngineFilter {
                 && doForceMerge;
         // && doCreate && doSnapshotIndex && doRecover && doClose 
         // && doSegments && doFailEngine && doFlushAndClose
+        // && doSyncFlush && doHasUncommittedChanges
     }
 
     @Override
@@ -119,11 +126,11 @@ public class TestEngineFilter implements EngineFilter {
     }
 
     @Override
-    public void doFlush(final boolean force, final boolean waitIfOngoing,
-            final EngineChain chain) throws EngineException,
-            FlushNotAllowedEngineException {
+    public CommitId doFlush(final boolean force, final boolean waitIfOngoing,
+            final EngineChain chain)
+                    throws EngineException, FlushNotAllowedEngineException {
         doFlush = true;
-        chain.doFlush(force, waitIfOngoing);
+        return chain.doFlush(force, waitIfOngoing);
     }
 
     @Override
@@ -155,9 +162,10 @@ public class TestEngineFilter implements EngineFilter {
     @Override
     public void doForceMerge(final boolean flush, final int maxNumSegments,
             final boolean onlyExpungeDeletes, final boolean upgrade,
-            final EngineChain chain) {
+            final boolean upgradeOnlyAncientSegments, final EngineChain chain) {
         doForceMerge = true;
-        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade);
+        chain.doForceMerge(flush, maxNumSegments, onlyExpungeDeletes, upgrade,
+                upgradeOnlyAncientSegments);
     }
 
     @Override
@@ -174,22 +182,36 @@ public class TestEngineFilter implements EngineFilter {
     }
 
     @Override
+    public SyncedFlushResult syncFlush(String syncId, CommitId expectedCommitId,
+            EngineChain chain) {
+        doSyncFlush = true;
+        return chain.syncFlush(syncId, expectedCommitId);
+    }
+
+    @Override
+    public boolean hasUncommittedChanges(EngineChain chain) {
+        doHasUncommittedChanges = true;
+        return chain.hasUncommittedChanges();
+    }
+
+    @Override
     public int order() {
         return 10;
     }
 
     @Override
     public String toString() {
-        return "TestEngineFilter [doClose=" + doClose + ", doCreate="
-                + doCreate + ", doIndex=" + doIndex + ", doDelete=" + doDelete
+        return "TestEngineFilter [doClose=" + doClose + ", doCreate=" + doCreate
+                + ", doIndex=" + doIndex + ", doDelete=" + doDelete
                 + ", doDeleteByQuery=" + doDeleteByQuery + ", doGet=" + doGet
                 + ", doMaybeMerge=" + doMaybeMerge + ", doRefresh=" + doRefresh
                 + ", doFlush=" + doFlush + ", doSnapshotIndex="
-                + doSnapshotIndex + ", doRecover=" + doRecover
-                + ", doSegments=" + doSegments + ", doPossibleMergeNeeded="
+                + doSnapshotIndex + ", doRecover=" + doRecover + ", doSegments="
+                + doSegments + ", doPossibleMergeNeeded="
                 + doPossibleMergeNeeded + ", doForceMerge=" + doForceMerge
                 + ", doFailEngine=" + doFailEngine + ", doFlushAndClose="
-                + doFlushAndClose + "]";
+                + doFlushAndClose + ", doSyncFlush=" + doSyncFlush
+                + ", doHasUncommittedChanges=" + doHasUncommittedChanges + "]";
     }
 
 }
