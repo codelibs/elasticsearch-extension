@@ -10,7 +10,8 @@ For example, this plugin has EngineFilter to insert your programe into InternalE
 
 | Version   | Elasticsearch |
 |:---------:|:-------------:|
-| master    | 1.5.X         |
+| master    | 1.6.X         |
+| 1.6.0     | 1.6.0         |
 | 1.5.0     | 1.5.0         |
 | 1.4.1     | 1.4.0.Beta1   |
 
@@ -23,7 +24,7 @@ Please file an [issue](https://github.com/codelibs/elasticsearch-extension/issue
 
 ### Install Extension Plugin
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-extension/1.5.0
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-extension/1.6.0
 
 ## Reference
 
